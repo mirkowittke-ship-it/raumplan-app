@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#17324d">
+<title>Mein Raumplan – Wochenplan</title>
+<style>
+:root{--navy:#17324d;--blue:#2f6ea5;--line:#dbe3eb;--muted:#637386;--green:#24764a;--orange:#a85b00;--bg:#f4f7fa}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#172536;line-height:1.45}
+header{background:var(--navy);color:white;padding:calc(16px + env(safe-area-inset-top)) 18px 18px}
+h1{font-size:24px;margin:0 0 5px} header p{margin:0;color:#dce7f1;font-size:14px}
+main{max-width:850px;margin:auto;padding:14px 13px 42px}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:13px;box-shadow:0 2px 8px #17324d0c}
+h2{font-size:18px;margin:0 0 8px} h3{font-size:15px;margin:12px 0 6px}
+p.help{font-size:13px;color:var(--muted);margin:5px 0 10px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
+input,select,textarea,button{font:inherit}
+input[type=file],input[type=date],input[type=text],select,textarea{width:100%;border:1px solid #c9d4df;border-radius:10px;padding:11px;background:white;color:#172536}
+textarea{min-height:120px;resize:vertical;font-family:ui-monospace,SFMono-Regular,monospace;font-size:13px}
+button{border:0;border-radius:11px;padding:11px 13px;font-weight:700;cursor:pointer;background:#e8eef4;color:var(--navy)}
+button.primary{background:var(--blue);color:white}
+button.danger{background:#fff0ed;color:#a33a2a}
+button:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.status{padding:10px 12px;border-radius:10px;background:#eef4f8;color:#30475b;font-size:13px;margin-top:10px}
+.warning{background:#fff5e6;color:#7a4b00}
+.success{background:#eaf7ef;color:#205d3c}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px;margin-top:10px}
+.daycard{border:1px solid var(--line);border-radius:12px;padding:10px}
+.daycard strong{display:block;margin-bottom:6px}
+.roomrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.small{font-size:12px;color:var(--muted)}
+#preview{max-width:100%;max-height:320px;display:none;border-radius:10px;margin-top:10px}
+.task{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid #edf0f3;padding:9px 0}
+.task:last-child{border-bottom:0}
+.task input{margin-top:5px;width:20px;height:20px;flex-shrink:0}
+.task .detail{flex:1;min-width:0}
+.task .room{font-weight:700}
+.task .meta{font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px;padding:12px 0}
+@media(max-width:480px){h1{font-size:21px}.panel{padding:12px}.roomrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔑 Mein Raumplan</h1>
+  <p>Wochenplan-Foto prüfen · Räume zuordnen · Aufgaben erstellen</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>1. Wochenplan fotografieren</h2>
+    <p class="help">Lade ein scharfes Foto oder einen Scan des Wochenplans hoch. Die Texterkennung läuft im Browser. Tabellen und kleine Schrift können falsch erkannt werden – bitte immer prüfen, bevor Aufgaben angelegt werden.</p>
+    <label for="photo">Foto auswählen</label>
+    <input id="photo" type="file" accept="image/*">
+    <img id="preview" alt="Vorschau des hochgeladenen Wochenplans">
+    <div class="actions">
+      <button id="readBtn" class="primary" disabled>Foto auslesen</button>
+      <button id="clearPhoto">Foto entfernen</button>
+    </div>
+    <div id="ocrStatus" class="status">Noch kein Foto ausgewählt.</div>
+    <label for="ocrText">Erkannter Text – bitte prüfen und bei Bedarf korrigieren</label>
+    <textarea id="ocrText" placeholder="Hier erscheint der erkannte Text. Du kannst ihn bearbeiten, wenn Räume oder Zeiten falsch erkannt wurden."></textarea>
+    <p class="small">Datenschutz: Das Foto wird nicht an einen eigenen Server gesendet. Für die Texterkennung wird die Bibliothek Tesseract.js von einem öffentlichen CDN geladen.</p>
+  </section>
+
+  <section class="panel">
+    <h2>2. Wochentage auswählen</h2>
+    <label for="weekStart">Montag der Planwoche</label>
+    <input id="weekStart" type="date">
+    <p class="help">Wähle die Wochentage aus, für die Aufgaben angelegt werden sollen. Standardmäßig sind Montag bis Samstag markiert.</p>
+    <div class="daygrid" id="days"></div>
+  </section>
+
+  <section class="panel">
+    <h2>3. Räume kontrollieren</h2>
+    <p class="help">Die Texterkennung kann Raumzeilen nicht zuverlässig automatisch den Spalten eines Tabellenplans zuordnen. Trage deshalb die Räume für jeden Tag in diesem Prüffeld ein. Ein Raum pro Zeile, zum Beispiel <b>408</b> oder <b>Raum 408</b>. Nur geprüfte Einträge werden übernommen.</p>
+    <div class="daygrid" id="roomInputs"></div>
+    <div class="actions">
+      <button id="copyRooms">Montagsräume auf alle ausgewählten Tage kopieren</button>
+      <button id="clearRooms">Räume leeren</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>4. Vorschau der Aufgaben</h2>
+    <p class="help">Für jeden bestätigten Raum und Tag werden drei Aufgaben erzeugt. Zeiten kannst du nach dem Erstellen in der Liste ergänzen.</p>
+    <div class="actions"><button id="previewBtn" class="primary">Vorschau erstellen</button></div>
+    <div id="taskPreview" class="empty">Noch keine Vorschau erstellt.</div>
+    <div class="actions"><button id="saveBtn" class="primary" disabled>Geprüfte Aufgaben speichern</button></div>
+    <div id="saveStatus" class="status">Noch nichts gespeichert.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Gespeicherte Aufgaben auf diesem Gerät</h2>
+    <p class="help">Die Einträge bleiben in diesem Browser auf diesem Gerät gespeichert. Sie werden nicht automatisch zwischen Mac und iPhone synchronisiert.</p>
+    <div class="actions"><button id="showSaved">Gespeicherte Aufgaben anzeigen</button><button id="exportBtn">JSON-Sicherung herunterladen</button></div>
+    <div id="savedTasks"></div>
+  </section>
+</main>
+<script>
+const STORAGE_KEY = "meinRaumplan_wochenvorlage_v2";
+const dayNames = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+const shortNames = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+const tasks = ["Aufschließen","Reinigen","Wiederabschließen"];
+let chosenRooms = {};
+let generated = [];
+const $ = id => document.getElementById(id);
+
+function localDateString(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return `${y}-${m}-${day}`}
+function mondayOf(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);return x}
+$("weekStart").value=localDateString(mondayOf(new Date()));
+
+function buildDays(){
+  const base=new Date($("weekStart").value+"T12:00:00");
+  $("days").innerHTML="";
+  $("roomInputs").innerHTML="";
+  dayNames.forEach((name,i)=>{
+    const date=new Date(base);date.setDate(base.getDate()+i);
+    const key=localDateString(date);
+    const checked=i<6;
+    const day=document.createElement("div");day.className="daycard";
+    day.innerHTML=`<label style="margin:0"><input type="checkbox" data-day="${i}" ${checked?"checked":""} style="width:auto;margin-right:6px"> ${name}</label><div class="small">${date.toLocaleDateString("de-DE")}</div>`;
+    $("days").appendChild(day);
+    const room=document.createElement("div");room.className="daycard";
+    room.innerHTML=`<strong>${name}</strong><div class="small">${date.toLocaleDateString("de-DE")}</div><label for="rooms-${i}">Räume (einer pro Zeile)</label><textarea id="rooms-${i}" data-rooms-day="${i}" placeholder="408&#10;412&#10;Raum 215"></textarea>`;
+    $("roomInputs").appendChild(room);
+  });
+}
+buildDays();
+$("weekStart").addEventListener("change",buildDays);
+$("photo").addEventListener("change",()=>{
+  const file=$("photo").files[0];
+  $("readBtn").disabled=!file;
+  if(!file){$("preview").style.display="none";$("ocrStatus").textContent="Noch kein Foto ausgewählt.";return}
+  $("preview").src=URL.createObjectURL(file);$("preview").style.display="block";
+  $("ocrStatus").textContent=`Foto bereit: ${file.name}. Klicke auf „Foto auslesen“.`;
+});
+$("clearPhoto").addEventListener("click",()=>{$("photo").value="";$("preview").style.display="none";$("readBtn").disabled=true;$("ocrText").value="";$("ocrStatus").textContent="Foto entfernt."});
+$("readBtn").addEventListener("click",async()=>{
+  const file=$("photo").files[0];if(!file)return;
+  $("readBtn").disabled=true;$("ocrStatus").textContent="Texterkennung wird geladen … Beim ersten Mal kann das etwas dauern.";
+  try{
+    if(!window.Tesseract){
+      await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";s.onload=resolve;s.onerror=()=>reject(new Error("Die Texterkennungs-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung."));document.head.appendChild(s)});
+    }
+    $("ocrStatus").textContent="Foto wird gelesen. Bitte warten …";
+    const result=await Tesseract.recognize(file,"deu+eng",{logger:m=>{if(m.status==="recognizing text")$("ocrStatus").textContent=`Texterkennung: ${Math.round((m.progress||0)*100)} %`; }});
+    $("ocrText").value=result.data.text||"";
+    $("ocrStatus").textContent="Fertig. Bitte den erkannten Text kontrollieren. Die Räume werden nicht automatisch ungeprüft gespeichert.";
+  }catch(e){$("ocrStatus").textContent="Texterkennung nicht möglich: "+e.message;$("ocrStatus").classList.add("warning")}
+  finally{$("readBtn").disabled=false}
+});
+function activeDay(i){const c=document.querySelector(`[data-day="${i}"]`);return !!c&&c.checked}
+function getRooms(i){return ($(`rooms-${i}`).value||"").split(/\n|,|;/).map(s=>s.trim()).filter(Boolean).filter((v,i,a)=>a.findIndex(x=>x.toLowerCase()===v.toLowerCase())===i)}
+$("copyRooms").addEventListener("click",()=>{
+  const src=getRooms(0);if(!src.length){alert("Bitte zuerst die Räume für Montag eintragen.");return}
+  dayNames.forEach((_,i)=>{if(i>0&&activeDay(i))$(`rooms-${i}`).value=src.join("\n")});
+});
+$("clearRooms").addEventListener("click",()=>{if(confirm("Alle eingetragenen Räume leeren?"))dayNames.forEach((_,i)=>$(`rooms-${i}`).value="")});
+$("previewBtn").addEventListener("click",()=>{
+  generated=[];const start=new Date($("weekStart").value+"T12:00:00");
+  dayNames.forEach((name,i)=>{
+    if(!activeDay(i))return;
+    const date=new Date(start);date.setDate(start.getDate()+i);const dateStr=localDateString(date);
+    getRooms(i).forEach(room=>tasks.forEach(task=>generated.push({id:`${dateStr}-${room}-${task}-${Math.random().toString(36).slice(2,8)}`,date:dateStr,room,task,done:false,time:""})));
+  });
+  const wrap=$("taskPreview");wrap.innerHTML="";
+  if(!generated.length){wrap.className="empty";wrap.textContent="Keine Aufgaben. Wähle mindestens einen Wochentag und trage mindestens einen Raum ein.";$("saveBtn").disabled=true;return}
+  wrap.className="";
+  const groups={};generated.forEach(t=>(groups[t.date]??=[]).push(t));
+  Object.keys(groups).sort().forEach(date=>{
+    const h=document.createElement("h3");h.textContent=new Date(date+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});wrap.appendChild(h);
+    groups[date].forEach(t=>{const row=document.createElement("div");row.className="task";row.innerHTML=`<div class="detail"><div class="room">${escapeHtml(t.room)}</div><div>${escapeHtml(t.task)}</div></div>`;wrap.appendChild(row)});
+  });
+  const note=document.createElement("div");note.className="status warning";note.textContent=`Kontrolle: ${generated.length} Aufgaben für ${new Set(generated.map(t=>t.date+"|"+t.room)).size} Raum/Tag-Kombinationen. Bitte vor dem Speichern prüfen.`;wrap.appendChild(note);
+  $("saveBtn").disabled=false;$("saveStatus").textContent="Vorschau bereit – noch nicht gespeichert.";
+});
+$("saveBtn").addEventListener("click",()=>{
+  if(!generated.length)return;
+  if(!confirm(`${generated.length} Aufgaben speichern? Bitte nur bestätigen, wenn Räume und Wochentage geprüft sind.`))return;
+  let existing=[];try{existing=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{}
+  const seen=new Set(existing.map(t=>`${t.date}|${t.room.toLowerCase()}|${t.task}`));
+  let added=0;generated.forEach(t=>{const key=`${t.date}|${t.room.toLowerCase()}|${t.task}`;if(!seen.has(key)){existing.push(t);seen.add(key);added++}});
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(existing));
+  $("saveStatus").textContent=`Gespeichert: ${added} neue Aufgaben. Bereits vorhandene gleiche Aufgaben wurden nicht doppelt angelegt.`;$("saveStatus").classList.add("success");
+  renderSaved();
+});
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderSaved(){
+  let list=[];try{list=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{}
+  const target=$("savedTasks");target.innerHTML="";
+  if(!list.length){target.innerHTML='<div class="empty">Noch keine gespeicherten Aufgaben auf diesem Gerät.</div>';return}
+  list.sort((a,b)=>a.date.localeCompare(b.date)||a.room.localeCompare(b.room,undefined,{numeric:true})||tasks.indexOf(a.task)-tasks.indexOf(b.task));
+  list.forEach(t=>{
+    const row=document.createElement("div");row.className="task";
+    row.innerHTML=`<input type="checkbox" ${t.done?"checked":""} aria-label="Erledigt"><div class="detail"><div class="room">${escapeHtml(t.room)} · ${new Date(t.date+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</div><div>${escapeHtml(t.task)}</div><div class="meta">${t.time?escapeHtml(t.time):"Keine Uhrzeit eingetragen"}</div></div><button class="danger" aria-label="Aufgabe löschen">Löschen</button>`;
+    row.querySelector("input").addEventListener("change",e=>{t.done=e.target.checked;localStorage.setItem(STORAGE_KEY,JSON.stringify(list))});
+    row.querySelector("button").addEventListener("click",()=>{if(confirm("Diese Aufgabe löschen?")){list=list.filter(x=>x.id!==t.id);localStorage.setItem(STORAGE_KEY,JSON.stringify(list));renderSaved()}});
+    target.appendChild(row);
+  });
+}
+$("showSaved").addEventListener("click",renderSaved);
+$("exportBtn").addEventListener("click",()=>{
+  const data=localStorage.getItem(STORAGE_KEY)||"[]";const blob=new Blob([data],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="mein-raumplan-wochenvorlage-sicherung.json";a.click();URL.revokeObjectURL(url);
+});
+renderSaved();
+</script>
+</body>
+</html>
