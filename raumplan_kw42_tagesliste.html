@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17324d">
+<title>Mein Raumplan – Tagesliste KW 42</title>
+<style>
+:root{--navy:#17324d;--blue:#2f6ea5;--bg:#f3f6f9;--line:#dbe3eb;--muted:#637386;--green:#24764a;--orange:#a85b00}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#182432}
+header{background:var(--navy);color:white;padding:calc(16px + env(safe-area-inset-top)) 18px 18px}
+h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#dce7f1;font-size:14px}
+main{max-width:760px;margin:auto;padding:14px 13px 40px}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:13px;box-shadow:0 2px 8px #142b3d0a}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#435367}
+input,select,textarea{width:100%;font:inherit;border:1px solid #c9d4df;border-radius:10px;padding:11px;background:white;color:#182432}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tabs{display:flex;gap:7px;overflow:auto;margin:12px 0}
+button{font:inherit;font-weight:700;border:0;border-radius:11px;padding:11px 13px;background:#e8eef4;color:var(--navy);cursor:pointer}
+button.primary{background:var(--blue);color:white}button.dark{background:var(--navy);color:white}button.warn{background:#fff0dc;color:#854600}button.danger{background:#ffebeb;color:#9e2424}
+.tabs button{white-space:nowrap;flex:1}.tabs button.active{background:var(--navy);color:white}
+.summary{display:flex;gap:8px}.metric{flex:1;background:#f3f7fa;border-radius:12px;padding:10px}.metric strong{font-size:22px;display:block}.metric span{font-size:12px;color:var(--muted)}
+.task{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #edf1f5}.task:last-child{border-bottom:0}
+.task input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--green)}
+.task-main{flex:1;min-width:0}.roomname{font-weight:800;font-size:17px}.details{font-size:13px;color:var(--muted);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 7px;border-radius:999px;margin:5px 4px 0 0}.open{background:#e3efff;color:#20588f}.clean{background:#e1f5e8;color:#216c41}.both{background:#fff0dc;color:#854600}
+.task.done .roomname{text-decoration:line-through;color:#788592}.task.done{opacity:.65}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{flex:1}
+.small{font-size:12px;color:var(--muted);line-height:1.45}.empty{padding:20px 8px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+details summary{font-weight:800;cursor:pointer;padding:3px 0}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 20px}
+@media(max-width:380px){.row{grid-template-columns:1fr}.tabs button{font-size:13px;padding:10px 7px}}
+</style>
+</head>
+<body>
+<header><h1>🔑 Mein Raumplan</h1><p>Aufschließen · Reinigen · Erledigt abhaken</p></header>
+<main>
+<section class="panel">
+ <div class="row">
+  <div><label for="day">Datum</label><input type="date" id="day"></div>
+  <div><label for="weekday">Wochentag</label><input id="weekday" readonly></div>
+ </div>
+ <div class="summary" style="margin-top:12px">
+  <div class="metric"><strong id="countOpen">0</strong><span>🔑 Aufschließen offen</span></div>
+  <div class="metric"><strong id="countClean">0</strong><span>🧹 Reinigen offen</span></div>
+  <div class="metric"><strong id="countDone">0</strong><span>☑️ Erledigt</span></div>
+ </div>
+</section>
+<div class="tabs" role="tablist">
+ <button class="active" data-filter="all">Alle Aufgaben</button>
+ <button data-filter="open">🔑 Aufschließen</button>
+ <button data-filter="clean">🧹 Reinigen</button>
+ <button data-filter="todo">Offen</button>
+</div>
+<section class="panel">
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+  <h2 style="font-size:19px;margin:0" id="listTitle">Deine Aufgaben</h2>
+  <button class="primary" id="newBtn">＋ Raum</button>
+ </div>
+ <p class="small" style="background:#fff0dc;padding:10px;border-radius:10px;color:#854600"><strong>WICHTIG:</strong> Die Zeiten unten sind Unterrichts-/Belegungszeiten, keine Reinigungszeiten. Währenddessen Raum nicht betreten. Alle Einträge sind vorläufig und müssen mit dem Originalplan abgeglichen werden.</p><div id="taskList"></div>
+ <p class="small">Deine Änderungen werden auf diesem Gerät im Browser gespeichert. Wenn du Browserdaten löschst oder die Datei auf einem anderen Gerät öffnest, können die Einträge fehlen.</p>
+</section>
+<section class="panel hidden" id="editor">
+ <h2 style="font-size:19px;margin:0 0 12px" id="editorTitle">Raum hinzufügen</h2>
+ <form id="taskForm">
+  <div class="row">
+   <div><label for="room">Raumnummer / Name *</label><input id="room" required placeholder="z. B. Raum 402"></div>
+   <div><label for="time">Uhrzeit (optional)</label><input id="time" placeholder="z. B. 15:00–15:30"></div>
+  </div>
+  <div style="margin-top:12px"><label for="kind">Aufgabe *</label><select id="kind"><option value="open">🔑 Aufschließen</option><option value="clean">🧹 Reinigen</option><option value="both">🔑 Aufschließen und 🧹 Reinigen</option></select></div>
+  <div style="margin-top:12px"><label for="notes">Hinweis (optional)</label><textarea id="notes" rows="2" placeholder="z. B. Eingang links, Material mitnehmen"></textarea></div>
+  <div class="actions"><button class="primary" type="submit">Speichern</button><button type="button" id="cancelBtn">Abbrechen</button></div>
+ </form>
+</section>
+<section class="panel">
+ <details>
+  <summary>📅 Andere Tage / wiederkehrende Aufgaben</summary>
+  <p class="small">Aufgaben werden pro Datum geführt. Lege dieselben Räume an einem anderen Datum erneut an. Wiederkehrende Wochenpläne und automatische Übernahme sind noch nicht eingerichtet.</p>
+ </details>
+ <div class="actions">
+  <button id="exportBtn">Daten sichern</button>
+  <button id="importBtn">Sicherung laden</button>
+  <button class="warn" id="resetDayBtn">Tag leeren</button>
+ </div>
+ <input type="file" id="fileInput" accept="application/json,.json" class="hidden">
+ <p class="small">„Daten sichern“ lädt eine Sicherungsdatei herunter. Damit kannst du deine Einträge später wiederherstellen.</p>
+</section>
+<section class="panel">
+ <h3 style="margin:0 0 8px;font-size:16px">ℹ️ Zum abfotografierten Raumplan</h3>
+ <p class="small" style="margin:0">Für Montag bis Samstag sind jeweils dieselben 16 Räume einmalig vorbereitet. Zeiten sind absichtlich leer, weil Belegungszeiten keine Reinigungszeiten sind. Bitte prüfen, welche Räume an jedem Tag tatsächlich anfallen.</p>
+</section>
+<footer>Mein Raumplan · KW 42 · 12.–17.10.2026</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const storeKey='meinRaumplan_KW42_bereinigt_v2';
+let data={};let filter='all';let editId=null;
+const today=new Date();const localISO=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10)};
+$('day').value='2026-10-12';
+function load(){
+  try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch(e){data={}}
+  // Eigenständiger Speicher. Pro Tag werden nur Räume aus der vereinbarten 16er-Liste
+  // angezeigt, für die in der jeweiligen Tages-Spalte ein Eintrag erkennbar ist.
+  // Leere Tabellenfelder bedeuten nicht automatisch, dass keine Reinigung nötig ist;
+  // Liste daher bitte mit dem Arbeitsauftrag abgleichen.
+  if(!localStorage.getItem(storeKey)){
+    const byDay={
+      '2026-10-12':['403a','403b','302','325','326','327','328','329','330','331','226','227','228','229','120','123'],
+      '2026-10-13':['403a','403b','302','325','326','327','328','329','330','331','226','227','228','229','120','123'],
+      '2026-10-14':['403a','403b','302','325','326','327','328','329','330','331','226','227','228','229','123'],
+      '2026-10-15':['403a','403b','302','325','326','327','328','329','330','331','226','227','228','120','123'],
+      '2026-10-16':['403a','403b','302','325','326','327','328','329','330','331','226','227','228','229','120','123'],
+      '2026-10-17':['327','328','330','331','226']
+    };
+    data={};
+    Object.entries(byDay).forEach(([day,rooms])=>{
+      data[day]=rooms.map(room=>({
+        id:'kw42-'+day+'-'+room,
+        room:'Raum '+room,
+        time:'',
+        kind:'both',
+        done:false,
+        notes:'⚠️ Raum steht in der Tages-Spalte des Originalplans. Bitte Arbeitsauftrag prüfen; während Unterricht/Belegung nicht betreten.'
+      }));
+    });
+    try{localStorage.setItem(storeKey,JSON.stringify(data))}catch(e){}
+  }
+}
+function save(){try{localStorage.setItem(storeKey,JSON.stringify(data))}catch(e){alert('Speichern war nicht möglich. Bitte exportiere eine Sicherung.')}render()}
+function entries(){return data[$('day').value]||[]}
+function dayName(v){if(!v)return '';return new Date(v+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long'})}
+function typeLabel(k){return k==='open'?'🔑 Aufschließen':k==='clean'?'🧹 Reinigen':'🔑 Aufschließen + 🧹 Reinigen'}
+function render(){
+ $('weekday').value=dayName($('day').value);
+ const items=entries();$('countOpen').textContent=items.filter(x=>!x.done&&(x.kind==='open'||x.kind==='both')).length;
+ $('countClean').textContent=items.filter(x=>!x.done&&(x.kind==='clean'||x.kind==='both')).length;
+ $('countDone').textContent=items.filter(x=>x.done).length;
+ const filtered=items.filter(x=>filter==='all'||(filter==='open'&&(x.kind==='open'||x.kind==='both'))||(filter==='clean'&&(x.kind==='clean'||x.kind==='both'))||(filter==='todo'&&!x.done));
+ $('listTitle').textContent=filter==='open'?'Aufschließen':filter==='clean'?'Reinigen':filter==='todo'?'Offene Aufgaben':'Deine Aufgaben';
+ const list=$('taskList');list.innerHTML='';
+ if(!filtered.length){list.innerHTML='<div class="empty">Hier ist noch nichts eingetragen.<br>Tippe auf „＋ Raum“, um zu starten.</div>';return}
+ filtered.forEach(item=>{
+  const div=document.createElement('div');div.className='task'+(item.done?' done':'');
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!item.done;cb.setAttribute('aria-label','Aufgabe erledigt');cb.addEventListener('change',()=>{item.done=cb.checked;save()});
+  const body=document.createElement('div');body.className='task-main';
+  const name=document.createElement('div');name.className='roomname';name.textContent=item.room;
+  const pill=document.createElement('span');pill.className='pill '+(item.kind==='open'?'open':item.kind==='clean'?'clean':'both');pill.textContent=typeLabel(item.kind);
+  body.append(name,pill);
+  if(item.time||item.notes){const det=document.createElement('div');det.className='details';det.textContent=[item.time,item.notes].filter(Boolean).join(' · ');body.append(det)}
+  const edit=document.createElement('button');edit.textContent='Bearbeiten';edit.style.padding='8px';edit.style.fontSize='12px';edit.addEventListener('click',()=>openEditor(item.id));
+  div.append(cb,body,edit);list.append(div);
+ });
+}
+function openEditor(id=null){
+ editId=id;const item=id?entries().find(x=>x.id===id):null;
+ $('editorTitle').textContent=item?'Raum bearbeiten':'Raum hinzufügen';
+ $('room').value=item?.room||'';$('time').value=item?.time||'';$('kind').value=item?.kind||'open';$('notes').value=item?.notes||'';
+ $('editor').classList.remove('hidden');$('room').focus();$('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('newBtn').addEventListener('click',()=>openEditor());
+$('cancelBtn').addEventListener('click',()=>{$('editor').classList.add('hidden');editId=null});
+$('taskForm').addEventListener('submit',e=>{
+ e.preventDefault();const list=entries();const values={room:$('room').value.trim(),time:$('time').value.trim(),kind:$('kind').value,notes:$('notes').value.trim(),done:false};
+ if(!values.room)return;
+ if(editId){const old=list.find(x=>x.id===editId);if(old)Object.assign(old,values,{done:old.done})}
+ else list.push({...values,id:Date.now().toString()});
+ data[$('day').value]=list;save();$('editor').classList.add('hidden');editId=null;
+});
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));render()}));
+$('day').addEventListener('change',()=>{$('editor').classList.add('hidden');editId=null;render()});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mein-raumplan-sicherung.json';a.click();URL.revokeObjectURL(a.href)});
+$('importBtn').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error();data=parsed;save();alert('Sicherung wurde geladen.')}catch(err){alert('Die Datei konnte nicht gelesen werden.')}e.target.value=''});
+$('resetDayBtn').addEventListener('click',()=>{if(confirm('Alle Aufgaben dieses Datums löschen?')){delete data[$('day').value];save()}});
+
+load();render();
+</script>
+</body>
+</html>
