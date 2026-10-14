@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meine Zeiterfassung</title>
+<style>
+:root{color-scheme:light;--blue:#175cd3;--green:#16803c;--red:#b42318;--line:#d0d5dd;--ink:#101828;--muted:#475467}
+*{box-sizing:border-box}body{margin:0;background:#f2f4f7;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:auto;padding:16px}h1{font-size:1.7rem;margin:0 0 5px}h2{font-size:1.15rem;margin:0 0 13px}.muted,.note{color:var(--muted);font-size:.9rem;line-height:1.45}
+.card{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;margin:13px 0;box-shadow:0 1px 2px #1018280a}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+label{display:block;font-weight:650;font-size:.92rem;margin-bottom:6px}
+input,select,button{font:inherit}input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:white;color:var(--ink)}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.green{background:var(--green);color:white}.red{background:var(--red);color:white}.blue{background:var(--blue);color:white}.secondary{background:#eaecf0;color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.stat{background:#f9fafb;border-radius:10px;padding:12px}.stat small{display:block;color:var(--muted);margin-bottom:5px}.stat strong{font-size:1.25rem;overflow-wrap:anywhere}
+#status{padding:10px 12px;border-radius:9px;background:#eff8ff;color:#1849a9;margin-top:12px}
+.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{text-align:left;padding:9px 7px;border-bottom:1px solid #eaecf0;white-space:nowrap}th{color:var(--muted)}
+details summary{cursor:pointer;font-weight:700}.checkline{display:flex;align-items:flex-start;gap:9px;font-weight:500}.checkline input{width:auto;margin-top:4px}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#3538cd;font-size:.8rem}
+.warn{background:#fffaeb!important;color:#93370d!important}.danger{color:var(--red)}.positive{color:var(--green)}
+@media(max-width:520px){main{padding:10px}.card{padding:12px}h1{font-size:1.45rem}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<main>
+<h1>⏱️ Meine Zeiterfassung</h1>
+<p class="muted">Morgens „Kommen“ drücken, zum Feierabend „Gehen“ drücken – die Zeiten werden automatisch gespeichert.</p>
+
+<section class="card">
+<h2>Arbeitszeit eintragen</h2>
+<div class="grid">
+ <div><label for="workDate">Arbeitstag</label><input id="workDate" type="date"></div>
+ <div><label for="shift">Schicht (automatisch vorgeschlagen)</label><select id="shift"><option value="frueh">Frühschicht</option><option value="spaet">Spätschicht</option></select></div>
+ <div><label for="pause">Tatsächlich gemachte Pause</label><select id="pause"><option value="50">50 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="0">0 Minuten</option><option value="custom">Andere Dauer …</option></select></div>
+ <div id="customPauseWrap" hidden><label for="customPause">Pause in Minuten</label><input id="customPause" type="number" min="0" max="300" value="50"></div>
+ <div><label for="come">Kommen</label><input id="come" type="time"></div>
+ <div><label for="go">Gehen</label><input id="go" type="time"></div>
+ <div><label for="dailyTarget">Sollzeit pro Arbeitstag</label><input id="dailyTarget" type="text" value="07:48" inputmode="numeric"></div>
+</div>
+<div class="buttons">
+<button class="green" id="comeBtn">🟢 Kommen – speichern</button>
+<button class="red" id="goBtn">🔴 Feierabend – speichern</button>
+<button class="blue" id="saveBtn">Eintrag speichern</button>
+<button class="secondary" id="clearBtn">Eingaben leeren</button>
+</div>
+<div id="status" role="status">Bereit. Datum prüfen und bei Arbeitsbeginn auf „Kommen“ drücken.</div>
+<p class="note">Trage die tatsächlich gemachte Pause ein: 30, 45, 50 Minuten oder „Andere Dauer“. Die App zieht nur diese Pause ab. Samstage und Sonntage werden nicht als Soll-Arbeitstage gezählt. Du kannst die Pause bei Bedarf manuell ändern.</p>
+</section>
+
+<section class="card">
+<h2>Monatskonto</h2>
+<div class="grid" style="margin-bottom:12px">
+ <div><label for="month">Monat auswählen</label><input type="month" id="month"></div>
+ <div><label for="targetDays">Soll-Arbeitstage im Monat</label><input id="targetDays" type="number" min="0" max="31" step="1"></div>
+</div>
+<p class="note">Die Soll-Arbeitstage werden zunächst nur als Montag bis Freitag gezählt; Samstag und Sonntag erzeugen keine Sollstunden. Trage hier weniger Tage ein, wenn z. B. ein gesetzlicher Feiertag für dich nicht als Soll-Arbeitstag zählt. Urlaub/Krankheit bitte nicht automatisch abziehen, wenn diese Zeit laut deiner Regel als Arbeitszeit angerechnet wird.</p>
+<div class="stats">
+ <div class="stat"><small>Gearbeitet im Monat</small><strong id="monthWorked">00:00</strong></div>
+ <div class="stat"><small>Monatliche Sollzeit</small><strong id="monthTarget">00:00</strong></div>
+ <div class="stat"><small>Monats-Plus/Minus</small><strong id="monthBalance">00:00</strong></div>
+ <div class="stat"><small>Gesamtes Stundenkonto</small><strong id="allBalance">00:00</strong></div>
+</div>
+<p id="monthSummary" class="note"></p>
+</section>
+
+<section class="card">
+<h2>Gespeicherte Tage</h2>
+<div class="buttons" style="margin-top:0;margin-bottom:12px">
+<button class="secondary" id="csvBtn">CSV für Excel exportieren</button>
+<button class="secondary" id="backupBtn">Datensicherung herunterladen</button>
+<label class="secondary" style="display:inline-flex;align-items:center;gap:8px;margin:0;cursor:pointer">Sicherung wiederherstellen<input id="restoreFile" type="file" accept=".json,application/json" style="display:none"></label>
+</div>
+<div class="tablewrap"><table><thead><tr><th>Datum</th><th>Schicht</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Ist</th><th>Soll</th><th>+/−</th><th>Aktion</th></tr></thead><tbody id="entries"></tbody></table></div>
+<p id="empty" class="note">Noch keine gespeicherten Tage.</p>
+</section>
+
+<section class="card">
+<details>
+<summary>⚙️ Einstellungen für den Schichtwechsel</summary>
+<p class="note">Damit die automatische Schichtzuordnung stimmt, wird eine bekannte Montagwoche als Ausgangspunkt verwendet. Standardmäßig ist die Woche ab 12.10.2026 als Frühschichtwoche eingestellt. In der Spätschichtwoche wird freitags 13:20–21:38 Uhr vorgeschlagen. Falls das bei dir nicht stimmt, ändere das hier.</p>
+<div class="grid">
+ <div><label for="anchorMonday">Montag einer bekannten Woche</label><input id="anchorMonday" type="date" value="2026-10-12"></div>
+ <div><label for="anchorShift">Schicht in dieser Woche</label><select id="anchorShift"><option value="frueh">Frühschicht</option><option value="spaet">Spätschicht</option></select></div>
+</div>
+<div class="buttons"><button class="blue" id="saveSettingsBtn">Einstellungen speichern</button></div>
+</details>
+</section>
+
+<section class="card">
+<h2>Wichtig zur Datensicherung</h2>
+<p class="note">Einträge werden automatisch in Safari auf diesem Mac gespeichert. Mit „Datensicherung herunterladen“ kannst du eine Sicherungsdatei aufheben. Bei einem anderen Gerät oder nach einem Browserwechsel kannst du sie über „Sicherung wiederherstellen“ importieren. CSV ist für Excel; JSON ist die vollständige Sicherung.</p>
+<p class="note"><strong>Bitte beachten:</strong> Die App ist ein persönliches Hilfsmittel und ersetzt nicht das offizielle Arbeitszeitkonto deiner Firma. Prüfe die betrieblichen Regeln für Feiertage, Urlaub, Krankheit und Sollzeit.</p>
+</section>
+</main>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const DATA_KEY='zeiterfassung_v3_entries', SETTINGS_KEY='zeiterfassung_v3_settings', MONTH_KEY='zeiterfassung_v3_monthdays';
+const pad=n=>String(n).padStart(2,'0');
+const dateString=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const now=new Date();
+let entries=[], settings={anchorMonday:'2026-10-12',anchorShift:'frueh'}, monthDays={};
+try{entries=JSON.parse(localStorage.getItem(DATA_KEY)||'[]');if(!Array.isArray(entries))entries=[];}catch{entries=[];}
+try{settings={...settings,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')};}catch{}
+try{monthDays=JSON.parse(localStorage.getItem(MONTH_KEY)||'{}');if(!monthDays||typeof monthDays!=='object')monthDays={};}catch{}
+const fmt=mins=>{mins=Math.round(Number(mins)||0);const sign=mins<0?'-':'';mins=Math.abs(mins);return sign+pad(Math.floor(mins/60))+':'+pad(mins%60);};
+const parseTime=s=>{if(typeof s!=='string'||!/^\d{2}:\d{2}$/.test(s))return null;const [h,m]=s.split(':').map(Number);return h<24&&m<60?h*60+m:null;};
+const parseDuration=s=>{const m=/^(\d{1,3}):([0-5]\d)$/.exec(String(s||'').trim());return m?Number(m[1])*60+Number(m[2]):null;};
+const selectedMonth=()=> $('month').value || dateString(now).slice(0,7);
+const shiftLabel=s=>s==='spaet'?'Spät':'Früh';
+const saveAll=()=>{localStorage.setItem(DATA_KEY,JSON.stringify(entries));localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));localStorage.setItem(MONTH_KEY,JSON.stringify(monthDays));};
+const getShiftForDate=date=>{
+ const d=new Date(date+'T12:00:00'), a=new Date((settings.anchorMonday||'2026-10-12')+'T12:00:00');
+ const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day);
+ const weeks=Math.floor((d-a)/604800000);
+ const isEarly=((weeks%2)+2)%2===0;
+ const first=settings.anchorShift==='frueh';
+ return (isEarly===first)?'frueh':'spaet';
+};
+const defaultPause=()=> $('pause').value==='custom' ? Math.max(0,Number($('customPause').value)||0) : Math.max(0,Number($('pause').value)||0);
+const defaultTimes=(date,shift)=>{
+ const weekday=new Date(date+'T12:00:00').getDay();
+ if(shift==='spaet' && weekday===5) return {come:'13:20',go:'21:38'};
+ if(shift==='spaet') return {come:'15:30',go:'00:08'};
+ return {come:'06:52',go:'15:30'};
+};
+const getPause=e=>Number(e.pause)||0;
+const worked=e=>{const s=parseTime(e.come),g=parseTime(e.go);if(s===null||g===null)return 0;let end=g;if(end<s)end+=1440;return Math.max(0,end-s-getPause(e));};
+const getTarget=e=>Number.isFinite(Number(e.target))?Number(e.target):468;
+const diff=e=>worked(e)-getTarget(e);
+function weekdayCount(month){const [y,m]=month.split('-').map(Number);let n=0;for(let d=1;d<=new Date(y,m,0).getDate();d++){const w=new Date(y,m-1,d).getDay();if(w!==0&&w!==6)n++;}return n;}
+function status(t){$('status').textContent=t;}
+function refreshMonthDays(){const m=selectedMonth();if(monthDays[m]===undefined)monthDays[m]=weekdayCount(m);$('targetDays').value=monthDays[m];}
+function render(){
+ const month=selectedMonth(), monthEntries=entries.filter(e=>e.date&&e.date.slice(0,7)===month);
+ const mWorked=monthEntries.reduce((s,e)=>s+worked(e),0);
+ const mTarget=(Number(monthDays[month]??weekdayCount(month))||0)*468;
+ const todayString=dateString(now);
+ const monthEnd = new Date(Number(month.slice(0,4)), Number(month.slice(5,7)), 0);
+ const monthStart = month + '-01';
+ let cutoff;
+ if (month === todayString.slice(0,7)) cutoff = todayString;
+ else if (month < todayString.slice(0,7)) cutoff = dateString(monthEnd);
+ else cutoff = monthStart;
+ let elapsedWeekdays=0;
+ if (cutoff >= monthStart) {
+   const [yy,mm]=month.split('-').map(Number);
+   const lastDay=Math.min(Number(cutoff.slice(8,10)), new Date(yy,mm,0).getDate());
+   for(let d=1; d<=lastDay; d++){ const wd=new Date(yy,mm-1,d).getDay(); if(wd!==0 && wd!==6) elapsedWeekdays++; }
+ }
+ const targetToDate=elapsedWeekdays*468;
+ const allDiff=entries.reduce((s,e)=>s+diff(e),0);
+ $('monthWorked').textContent=fmt(mWorked);
+ $('monthTarget').textContent=fmt(mTarget);
+ $('monthBalance').textContent=(mWorked-targetToDate>0?'+':'')+fmt(mWorked-targetToDate);
+ $('monthBalance').className=(mWorked-targetToDate)<0?'danger':(mWorked-targetToDate)>0?'positive':'';
+ $('allBalance').textContent=(allDiff>0?'+':'')+fmt(allDiff);$('allBalance').className=allDiff<0?'danger':allDiff>0?'positive':'';
+ $('monthSummary').textContent=`${monthEntries.length} gespeicherte(r) Arbeitstag(e) in ${month}. Sollzeit bis ${cutoff}: ${elapsedWeekdays} Werktage × 07:48 = ${fmt(targetToDate)}. Monats-Plus/Minus vergleicht die erfassten Ist-Stunden mit der Sollzeit bis zu diesem Stichtag; Wochenenden zählen nicht.`;
+ const tbody=$('entries');tbody.innerHTML='';const sorted=[...entries].sort((a,b)=>b.date.localeCompare(a.date));
+ $('empty').hidden=sorted.length>0;
+ sorted.forEach(e=>{
+ const ist=worked(e),df=diff(e),tr=document.createElement('tr');
+ [e.date,shiftLabel(e.shift),e.come||'—',e.go||'Offen',fmt(getPause(e)),e.go?fmt(ist):'Offen',fmt(getTarget(e)),e.go?((df>0?'+':'')+fmt(df)):'Offen'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+ const td=document.createElement('td'),edit=document.createElement('button');edit.textContent='Öffnen';edit.className='secondary';edit.style.padding='6px 9px';edit.onclick=()=>{ $('workDate').value=e.date;loadDate(true);window.scrollTo({top:0,behavior:'smooth'});};
+ const del=document.createElement('button');del.textContent='Löschen';del.className='secondary';del.style.padding='6px 9px';del.style.marginLeft='5px';del.onclick=()=>{if(confirm('Eintrag vom '+e.date+' wirklich löschen?')){entries=entries.filter(x=>x.date!==e.date);saveAll();render();status('Eintrag gelöscht.');}};
+ td.append(edit,del);tr.appendChild(td);tbody.appendChild(tr);
+ });
+}
+function loadDate(fromSaved=false){
+ const date=$('workDate').value;if(!date)return;
+ const e=entries.find(x=>x.date===date);
+ if(e){$('shift').value=e.shift;$('come').value=e.come||'';$('go').value=e.go||'';$('dailyTarget').value=fmt(getTarget(e));
+ const p=String(e.pause);if(['0','30','50'].includes(p))$('pause').value=p;else{$('pause').value='custom';$('customPause').value=p;}
+ status('Gespeicherter Eintrag geladen. Änderungen kannst du speichern.');}
+ else{
+ $('shift').value=getShiftForDate(date);
+ const times=defaultTimes(date,$('shift').value);$('come').value=times.come;$('go').value=times.go;
+ $('dailyTarget').value='07:48';$('pause').value='50';
+ status('Schicht und Standardzeiten vorgeschlagen: '+shiftLabel($('shift').value)+'. Bitte Zeiten prüfen und bei Bedarf anpassen.');
+ }
+ $('customPauseWrap').hidden=$('pause').value!=='custom';
+}
+function clockIn(){
+ $('come').value=pad(new Date().getHours())+':'+pad(new Date().getMinutes());
+ const date=$('workDate').value;
+ if(!date){status('Bitte zuerst ein Datum auswählen.');return;}
+ const old=entries.find(x=>x.date===date);
+ const target=parseDuration($('dailyTarget').value);
+ const entry={date,shift:$('shift').value,come:$('come').value,go:old?.go||'',pause:defaultPause(),target:target===null?468:target};
+ const i=entries.findIndex(x=>x.date===date);if(i>=0)entries[i]=entry;else entries.push(entry);
+ saveAll();refreshMonthDays();render();
+ status('Kommen um '+entry.come+' gespeichert. Feierabend kannst du später mit dem roten Knopf eintragen.');
+}
+function clockOut(){
+ $('go').value=pad(new Date().getHours())+':'+pad(new Date().getMinutes());
+ const date=$('workDate').value;
+ if(!date){status('Bitte zuerst ein Datum auswählen.');return;}
+ const old=entries.find(x=>x.date===date);
+ const target=parseDuration($('dailyTarget').value);
+ const entry={date,shift:$('shift').value,come:$('come').value||(old?.come||''),go:$('go').value,pause:defaultPause(),target:target===null?468:target};
+ if(!entry.come){status('Ich habe noch keine Kommen-Zeit für diesen Tag. Drücke zuerst „Kommen“ oder trage die Uhrzeit ein.');return;}
+ const i=entries.findIndex(x=>x.date===date);if(i>=0)entries[i]=entry;else entries.push(entry);
+ saveAll();refreshMonthDays();render();
+ status('Feierabend um '+entry.go+' gespeichert. Gearbeitet: '+fmt(worked(entry))+'. Der Tag ist fertig!');
+}
+$('workDate').value=dateString(now);$('month').value=dateString(now).slice(0,7);
+$('anchorMonday').value=settings.anchorMonday;$('anchorShift').value=settings.anchorShift;
+$('comeBtn').onclick=clockIn;$('goBtn').onclick=clockOut;
+$('workDate').addEventListener('change',()=>{loadDate();});
+$('shift').addEventListener('change',()=>{
+ const times=defaultTimes($('workDate').value,$('shift').value);$('come').value=times.come;$('go').value=times.go;
+ status('Schicht und Standardzeiten geändert. Bitte prüfen und bei Bedarf anpassen.');
+});
+$('pause').addEventListener('change',()=>{$('customPauseWrap').hidden=$('pause').value!=='custom';});
+$('month').addEventListener('change',()=>{refreshMonthDays();render();});
+$('targetDays').addEventListener('change',()=>{const m=selectedMonth();monthDays[m]=Math.max(0,Math.min(31,Math.round(Number($('targetDays').value)||0)));saveAll();render();});
+$('saveBtn').onclick=()=>{
+ const date=$('workDate').value,come=$('come').value,go=$('go').value,target=parseDuration($('dailyTarget').value);
+ if(!date){status('Bitte ein Datum auswählen.');return;}
+ if(parseTime(come)===null){status('Bitte zuerst Kommen eintragen.');return;}
+ if(go && parseTime(go)===null){status('Bitte eine gültige Gehen-Uhrzeit eintragen.');return;}
+ if(target===null){status('Bitte Sollzeit im Format 07:48 eintragen.');return;}
+ const pause=defaultPause(),entry={date,shift:$('shift').value,come,go:go||'',pause,target};
+ const i=entries.findIndex(x=>x.date===date);if(i>=0)entries[i]=entry;else entries.push(entry);
+ saveAll();refreshMonthDays();render();status(`Eintrag für ${date} gespeichert. Ist-Zeit: ${fmt(worked(entry))}, Plus/Minus: ${(diff(entry)>0?'+':'')+fmt(diff(entry))}.`);
+};
+$('clearBtn').onclick=()=>{$('come').value='';$('go').value='';$('pause').value='50';$('customPauseWrap').hidden=true;$('dailyTarget').value='07:48';loadDate();status('Eingaben zurückgesetzt.');};
+$('saveSettingsBtn').onclick=()=>{
+ if(!$('anchorMonday').value){status('Bitte den Montag einer bekannten Woche auswählen.');return;}
+ settings.anchorMonday=$('anchorMonday').value;settings.anchorShift=$('anchorShift').value;saveAll();loadDate();status('Schichtwechsel-Einstellungen gespeichert.');};
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('csvBtn').onclick=()=>{
+ const rows=[['Datum','Schicht','Kommen','Gehen','Pause Minuten','Ist Minuten','Soll Minuten','Differenz Minuten'],...entries.map(e=>[e.date,shiftLabel(e.shift),e.come,e.go,getPause(e),worked(e),getTarget(e),diff(e)])];
+ const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ download('zeiterfassung.csv','\ufeff'+csv,'text/csv;charset=utf-8;');
+};
+$('backupBtn').onclick=()=>download('zeiterfassung_sicherung.json',JSON.stringify({version:3,entries,settings,monthDays},null,2),'application/json');
+$('restoreFile').onchange=async ev=>{
+ const file=ev.target.files&&ev.target.files[0];if(!file)return;
+ try{const obj=JSON.parse(await file.text());if(!obj||!Array.isArray(obj.entries))throw new Error('Ungültige Sicherungsdatei');
+ if(!confirm('Sicherung importieren? Die Einträge aus der Datei werden mit den vorhandenen Einträgen zusammengeführt. Bei gleichem Datum ersetzt die Sicherung den vorhandenen Eintrag.'))return;
+ const map=new Map(entries.map(e=>[e.date,e]));obj.entries.forEach(e=>{if(e&&e.date)map.set(e.date,e);});entries=[...map.values()];
+ if(obj.settings)settings={...settings,...obj.settings};if(obj.monthDays)monthDays={...monthDays,...obj.monthDays};
+ saveAll();$('anchorMonday').value=settings.anchorMonday;$('anchorShift').value=settings.anchorShift;refreshMonthDays();render();status('Sicherung erfolgreich importiert.');
+ }catch(e){status('Import fehlgeschlagen: Bitte eine gültige JSON-Sicherung auswählen.');}
+ finally{ev.target.value='';}
+};
+refreshMonthDays();loadDate();render();
+})();
+</script>
+</body>
+</html>
