@@ -1,0 +1,233 @@
+!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17324d">
+<title>Mein Raumplan – Tagesliste KW 42 (neu)</title>
+<style>
+:root{--navy:#17324d;--blue:#2f6ea5;--bg:#f3f6f9;--line:#dbe3eb;--muted:#637386;--green:#24764a;--orange:#a85b00;--red-bg:#fee2e2;--red-text:#991b1b;--green-bg:#dcfce7;--green-text:#166534;--unknown-bg:#fef3c7;--unknown-text:#92400e}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#182432}
+header{background:var(--navy);color:white;padding:calc(16px + env(safe-area-inset-top)) 18px 18px}
+h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:#dce7f1;font-size:14px}
+main{max-width:760px;margin:auto;padding:14px 13px 40px}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:13px;box-shadow:0 2px 8px #142b3d0a}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:#435367}
+input,select,textarea{width:100%;font:inherit;border:1px solid #c9d4df;border-radius:10px;padding:11px;background:white;color:#182432}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tabs{display:flex;gap:7px;overflow:auto;margin:12px 0}
+button{font:inherit;font-weight:700;border:0;border-radius:11px;padding:11px 13px;background:#e8eef4;color:var(--navy);cursor:pointer}
+button.primary{background:var(--blue);color:white}button.dark{background:var(--navy);color:white}button.warn{background:#fff0dc;color:#854600}button.danger{background:#ffebeb;color:#9e2424}
+.tabs button{white-space:nowrap;flex:1}.tabs button.active{background:var(--navy);color:white}
+.summary{display:flex;gap:8px}.metric{flex:1;background:#f3f7fa;border-radius:12px;padding:10px}.metric strong{font-size:22px;display:block}.metric span{font-size:12px;color:var(--muted)}
+.task{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #edf1f5}.task:last-child{border-bottom:0}
+.task input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--green)}
+.task-main{flex:1;min-width:0}.roomname{font-weight:800;font-size:17px}.details{font-size:13px;color:var(--muted);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 7px;border-radius:999px;margin:5px 4px 0 0}.open{background:#e3efff;color:#20588f}.clean{background:#e1f5e8;color:#216c41}.both{background:#fff0dc;color:#854600}
+.task.occupied{background:var(--red-bg);border-radius:12px;padding:12px;margin:7px 0;border:1px solid #fca5a5}.task.occupied .roomname{color:var(--red-text)}.task.free{background:var(--green-bg);border-radius:12px;padding:12px;margin:7px 0;border:1px solid #86efac}.task.free .roomname{color:var(--green-text)}.task.unknown{background:var(--unknown-bg);border-radius:12px;padding:12px;margin:7px 0;border:1px solid #fcd34d}.task.unknown .roomname{color:var(--unknown-text)}.task.done .roomname{text-decoration:line-through;color:#788592}.task.done{opacity:.72}.clockbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#e8eef4;border-radius:12px}.clockbar strong{font-size:22px;color:var(--navy)}.clockbar span{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{flex:1}
+.small{font-size:12px;color:var(--muted);line-height:1.45}.empty{padding:20px 8px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+details summary{font-weight:800;cursor:pointer;padding:3px 0}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 20px}
+@media(max-width:380px){.row{grid-template-columns:1fr}.tabs button{font-size:13px;padding:10px 7px}}
+</style>
+</head>
+<body>
+<header><h1>🔑 Mein Raumplan</h1><p>Aufschließen · Reinigen · Erledigt abhaken</p></header>
+<main>
+<section class="panel">
+ <div class="row">
+  <div><label for="day">Datum</label><input type="date" id="day"></div>
+  <div><label for="weekday">Wochentag</label><input id="weekday" readonly></div>
+ </div>
+ <div class="clockbar"><div><span>Aktuelle Uhrzeit</span><br><strong id="liveClock">--:--:--</strong></div><div><span>Heute</span><br><strong id="liveDate" style="font-size:16px">--</strong></div></div>
+  <div class="summary" style="margin-top:12px">
+  <div class="metric"><strong id="countOpen">0</strong><span>🔑 Aufschließen offen</span></div>
+  <div class="metric"><strong id="countClean">0</strong><span>🧹 Reinigen offen</span></div>
+  <div class="metric"><strong id="countDone">0</strong><span>☑️ Erledigt</span></div>
+ </div>
+</section>
+<div class="tabs" role="tablist">
+ <button class="active" data-filter="all">Alle Aufgaben</button>
+ <button data-filter="open">🔑 Aufschließen</button>
+ <button data-filter="clean">🧹 Reinigen</button>
+ <button data-filter="todo">Offen</button>
+</div>
+<section class="panel">
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+  <h2 style="font-size:19px;margin:0" id="listTitle">Deine Aufgaben</h2>
+  <button class="primary" id="newBtn">＋ Raum</button>
+ </div>
+ <p class="small" style="background:#fff0dc;padding:10px;border-radius:10px;color:#854600"><strong>WICHTIG:</strong> Die Zeiten unten sind Unterrichts-/Belegungszeiten, keine Reinigungszeiten. Währenddessen Raum nicht betreten. Alle Einträge sind vorläufig und müssen mit dem Originalplan abgeglichen werden.</p><div id="taskList"></div>
+ <p class="small">🔴 Rot = gerade belegt · 🟢 Grün = gerade frei · 🟡 Gelb = Zeitangabe unklar.<br>Deine Änderungen werden auf diesem Gerät im Browser gespeichert. Wenn du Browserdaten löschst oder die Datei auf einem anderen Gerät öffnest, können die Einträge fehlen.</p>
+</section>
+<section class="panel hidden" id="editor">
+ <h2 style="font-size:19px;margin:0 0 12px" id="editorTitle">Raum hinzufügen</h2>
+ <form id="taskForm">
+  <div class="row">
+   <div><label for="room">Raumnummer / Name *</label><input id="room" required placeholder="z. B. Raum 402"></div>
+   <div><label for="time">Uhrzeit (optional)</label><input id="time" placeholder="z. B. 15:00–15:30"></div>
+  </div>
+  <div style="margin-top:12px"><label for="kind">Aufgabe *</label><select id="kind"><option value="open">🔑 Aufschließen</option><option value="clean">🧹 Reinigen</option><option value="both">🔑 Aufschließen und 🧹 Reinigen</option></select></div>
+  <div style="margin-top:12px"><label for="notes">Hinweis (optional)</label><textarea id="notes" rows="2" placeholder="z. B. Eingang links, Material mitnehmen"></textarea></div>
+  <div class="actions"><button class="primary" type="submit">Speichern</button><button type="button" id="cancelBtn">Abbrechen</button></div>
+ </form>
+</section>
+<section class="panel">
+ <details>
+  <summary>📅 Andere Tage / wiederkehrende Aufgaben</summary>
+  <p class="small">Aufgaben werden pro Datum geführt. Lege dieselben Räume an einem anderen Datum erneut an. Wiederkehrende Wochenpläne und automatische Übernahme sind noch nicht eingerichtet.</p>
+ </details>
+ <div class="actions">
+  <button id="exportBtn">Daten sichern</button>
+  <button id="importBtn">Sicherung laden</button>
+  <button class="warn" id="resetDayBtn">Tag leeren</button>
+ </div>
+ <input type="file" id="fileInput" accept="application/json,.json" class="hidden">
+ <p class="small">„Daten sichern“ lädt eine Sicherungsdatei herunter. Damit kannst du deine Einträge später wiederherstellen.</p>
+</section>
+<section class="panel">
+ <h3 style="margin:0 0 8px;font-size:16px">ℹ️ Zum abfotografierten Raumplan</h3>
+ <p class="small" style="margin:0">Die vorbereiteten Tageslisten zeigen die Räume für den ausgewählten Tag. Bitte gleiche alle Einträge vor der Nutzung mit dem Originalplan ab. Angezeigte Zeiten sind Belegungsangaben aus dem Originalplan, keine Reinigungszeiten. Unklare Angaben bitte am Originalplan prüfen.</p>
+</section>
+<footer>Mein Raumplan · KW 42/43 · 12.–24.10.2026</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const storeKey='meinRaumplan_KW42_tagesliste_v5';
+const selectedDayKey='meinRaumplan_selected_day_v1';
+let data={};let filter='all';let editId=null;
+const today=new Date();const localISO=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10)};
+$('day').value=localISO(today);
+function load(){
+  try{data=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch(e){data={}}
+  // Eigenständiger Speicher mit Tageslisten und ablesbaren Belegungsangaben aus dem Foto.
+  // Belegungszeiten sind KEINE Reinigungszeiten; Angaben bitte mit dem Originalplan abgleichen.
+  if(!localStorage.getItem(storeKey)){
+    const byDay={
+      '2026-10-12':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['302','08:30–12:45'],['325','08:30–15:30'],['326','08:00–13:05'],['327','08:00–13:00'],['328','08:00–15:00'],['329','08:00–15:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:00–15:00'],['227','08:30–12:45'],['228','KLR-1 (Uhrzeit im Plan nicht angegeben)'],['229','08:30–14:45'],['120','09:00–13:15'],['123','08:30–12:45']
+      ],
+      '2026-10-13':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['302','08:30–12:45'],['325','08:30–10:00; später 14:00–18:50'],['326','15:15–19:55'],['327','08:00–13:00'],['328','08:00–15:00'],['329','08:00–15:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:00–17:00'],['227','08:30–12:45'],['228','KLR-1 (Uhrzeit im Plan nicht angegeben)'],['229','08:00–10:00; 10:15–11:45; 12:15–15:30'],['120','09:00–13:15'],['123','08:30–12:45']
+      ],
+      '2026-10-14':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['302','08:30–12:45'],['325','08:30–16:15'],['326','09:05–15:00'],['327','10:15–16:15'],['328','08:00–15:00'],['329','08:00–15:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:00–15:00'],['227','08:30–12:45'],['228','KLR-1 (Uhrzeit im Plan nicht angegeben)'],['229','08:00–10:00; 10:15–13:45'],['123','08:30–12:45']
+      ],
+      '2026-10-15':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['302','08:30–12:45'],['325','08:00–13:00'],['326','08:30–15:30'],['327','08:30–15:30'],['328','08:00–15:00'],['329','08:00–13:00'],['330','09:00–15:00'],['331','09:00–13:15'],['226','08:00–15:00'],['227','08:30–12:45'],['228','KLR-1 (Uhrzeit im Plan nicht angegeben)'],['120','09:00–13:15'],['123','08:30–12:45']
+      ],
+      '2026-10-16':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['302','08:30–12:45'],['325','15:15–19:55'],['326','08:30–12:45; später 15:15–19:55'],['327','15:15–19:55'],['328','08:00–15:00'],['329','08:00–13:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:00–15:00'],['227','08:30–12:45'],['228','KLR-1 (Uhrzeit im Plan nicht angegeben)'],['229','09:00–13:15'],['120','ab 12:30 (Endzeit nicht angegeben)'],['123','08:30–12:45']
+      ],
+      '2026-10-17':[
+        ['327','07:30–13:45'],['328','08:00–15:00'],['330','07:30–13:45'],['331','07:30–13:45'],['226','07:30–12:10']
+      ],
+      '2026-10-19':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['408',''],['302',''],['324',''],['325',''],['326',''],['327',''],['328','08:00–14:30'],['329','08:00–13:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:30–12:45'],['227',''],['228',''],['231',''],['117',''],['118',''],['120','09:00–13:15'],['121',''],['122',''],['123','08:30–12:45'],['.014',''],['.015',''],['.025',''],['.030','']
+      ],
+      '2026-10-20':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['408',''],['302',''],['324',''],['325','14:00–18:50'],['326',''],['327',''],['328','08:00–14:30'],['329','08:00–13:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:30–12:45'],['227',''],['228',''],['231',''],['117',''],['118',''],['120','09:00–13:15'],['121',''],['122',''],['123','08:30–12:45'],['.014',''],['.015',''],['.025',''],['.030','']
+      ],
+      '2026-10-21':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['408',''],['302',''],['324',''],['325','14:00–18:50'],['326',''],['327',''],['328','08:00–14:30'],['329','08:00–13:00'],['330',''],['331','09:00–13:15'],['226','08:30–12:45'],['227',''],['228',''],['231',''],['117',''],['118',''],['120',''],['121',''],['122',''],['123','08:30–12:45'],['.014',''],['.015',''],['.025',''],['.030','']
+      ],
+      '2026-10-22':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['408',''],['302',''],['324',''],['325',''],['326',''],['327',''],['328','08:00–14:30'],['329','08:00–13:00'],['330','08:00–13:00'],['331','09:00–13:15'],['226','08:30–12:45'],['227',''],['228',''],['231',''],['117',''],['118',''],['120','09:00–13:15'],['121',''],['122',''],['123','08:30–12:45'],['.014',''],['.015',''],['.025',''],['.030','']
+      ],
+      '2026-10-23':[
+        ['403a','08:30–12:45'],['403b','08:30–12:45'],['408',''],['302','15:15–19:55'],['324',''],['325','15:15–19:55'],['326','15:15–19:55'],['327','15:15–19:55'],['328','08:00–14:30'],['329','08:00–15:00'],['330','08:00–15:00; 15:15–19:55'],['331','09:00–13:15'],['226','08:30–12:45'],['227',''],['228',''],['231',''],['117',''],['118',''],['120','09:00–13:15'],['121',''],['122',''],['123','08:30–12:45'],['.014',''],['.015',''],['.025',''],['.030','']
+      ],
+      '2026-10-24':[
+        ['403a',''],['403b',''],['408','07:30–13:45'],['302',''],['324',''],['325',''],['326','07:30–13:45'],['327','07:30–13:45'],['328',''],['329',''],['330','07:30–12:10'],['331',''],['226',''],['227',''],['228',''],['231',''],['117',''],['118',''],['120',''],['121',''],['122',''],['123',''],['.014',''],['.015',''],['.025',''],['.030','']
+      ]
+    };
+    data={};
+    Object.entries(byDay).forEach(([day,rooms])=>{
+      data[day]=rooms.map(([room,time])=>({
+        id:'kw42-'+day+'-'+room,
+        room:'Raum '+room,
+        time:time?'Belegung: '+time:'',
+        kind:'both',
+        done:false,
+        notes:'⚠️ Raum steht in der Tages-Spalte des Originalplans. Bitte Arbeitsauftrag prüfen; während Unterricht/Belegung nicht betreten.'
+      }));
+    });
+    try{localStorage.setItem(storeKey,JSON.stringify(data))}catch(e){}
+  }
+}
+function save(){try{localStorage.setItem(storeKey,JSON.stringify(data))}catch(e){alert('Speichern war nicht möglich. Bitte exportiere eine Sicherung.')}render()}
+function entries(){return data[$('day').value]||[]}
+function dayName(v){if(!v)return '';return new Date(v+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long'})}
+function typeLabel(k){return k==='open'?'🔑 Aufschließen':k==='clean'?'🧹 Reinigen':'🔑 Aufschließen + 🧹 Reinigen'}
+function roomStatus(item){
+  const raw=(item.time||'').replace(/^Belegung:\s*/i,'');
+  const matches=[...raw.matchAll(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g)];
+  if(!raw.trim()) return 'free';
+  if(!matches.length) return 'unknown';
+  const now=new Date(), current=now.getHours()*60+now.getMinutes();
+  for(const m of matches){
+    const start=Number(m[1])*60+Number(m[2]), end=Number(m[3])*60+Number(m[4]);
+    if(current>=start && current<end) return 'occupied';
+  }
+  return 'free';
+}
+function render(){
+ $('weekday').value=dayName($('day').value);
+ const items=entries();$('countOpen').textContent=items.filter(x=>!x.done&&(x.kind==='open'||x.kind==='both')).length;
+ $('countClean').textContent=items.filter(x=>!x.done&&(x.kind==='clean'||x.kind==='both')).length;
+ $('countDone').textContent=items.filter(x=>x.done).length;
+ const filtered=items.filter(x=>filter==='all'||(filter==='open'&&(x.kind==='open'||x.kind==='both'))||(filter==='clean'&&(x.kind==='clean'||x.kind==='both'))||(filter==='todo'&&!x.done));
+ $('listTitle').textContent=filter==='open'?'Aufschließen':filter==='clean'?'Reinigen':filter==='todo'?'Offene Aufgaben':'Deine Aufgaben';
+ const list=$('taskList');list.innerHTML='';
+ if(!filtered.length){list.innerHTML='<div class="empty">Hier ist noch nichts eingetragen.<br>Tippe auf „＋ Raum“, um zu starten.</div>';return}
+ filtered.forEach(item=>{
+  const status=roomStatus(item);const div=document.createElement('div');div.className='task '+status+(item.done?' done':'');
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!item.done;cb.setAttribute('aria-label','Aufgabe erledigt');cb.addEventListener('change',()=>{item.done=cb.checked;save()});
+  const body=document.createElement('div');body.className='task-main';
+  const name=document.createElement('div');name.className='roomname';name.textContent=item.room;
+  const pill=document.createElement('span');pill.className='pill '+(status==='occupied'?'both':status==='free'?'clean':'open');pill.textContent=(status==='occupied'?'🔴 Gerade belegt':status==='free'?'🟢 Gerade frei':'🟡 Zeit unklar')+' · '+typeLabel(item.kind);
+  body.append(name,pill);
+  if(item.time||item.notes){const det=document.createElement('div');det.className='details';det.textContent=[item.time,item.notes].filter(Boolean).join(' · ');body.append(det)}
+  const edit=document.createElement('button');edit.textContent='Bearbeiten';edit.style.padding='8px';edit.style.fontSize='12px';edit.addEventListener('click',()=>openEditor(item.id));
+  div.append(cb,body,edit);list.append(div);
+ });
+}
+function openEditor(id=null){
+ editId=id;const item=id?entries().find(x=>x.id===id):null;
+ $('editorTitle').textContent=item?'Raum bearbeiten':'Raum hinzufügen';
+ $('room').value=item?.room||'';$('time').value=item?.time||'';$('kind').value=item?.kind||'open';$('notes').value=item?.notes||'';
+ $('editor').classList.remove('hidden');$('room').focus();$('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('newBtn').addEventListener('click',()=>openEditor());
+$('cancelBtn').addEventListener('click',()=>{$('editor').classList.add('hidden');editId=null});
+$('taskForm').addEventListener('submit',e=>{
+ e.preventDefault();const list=entries();const values={room:$('room').value.trim(),time:$('time').value.trim(),kind:$('kind').value,notes:$('notes').value.trim(),done:false};
+ if(!values.room)return;
+ if(editId){const old=list.find(x=>x.id===editId);if(old)Object.assign(old,values,{done:old.done})}
+ else list.push({...values,id:Date.now().toString()});
+ data[$('day').value]=list;save();$('editor').classList.add('hidden');editId=null;
+});
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));render()}));
+$('day').addEventListener('change',()=>{$('editor').classList.add('hidden');editId=null;try{localStorage.setItem(selectedDayKey,$('day').value)}catch(e){};render()});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mein-raumplan-sicherung.json';a.click();URL.revokeObjectURL(a.href)});
+$('importBtn').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const parsed=JSON.parse(await f.text());if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error();data=parsed;save();alert('Sicherung wurde geladen.')}catch(err){alert('Die Datei konnte nicht gelesen werden.')}e.target.value=''});
+$('resetDayBtn').addEventListener('click',()=>{if(confirm('Alle Aufgaben dieses Datums löschen?')){delete data[$('day').value];save()}});
+
+load();
+const rememberedDay=localStorage.getItem(selectedDayKey);
+if(rememberedDay && data[rememberedDay]) $('day').value=rememberedDay;
+else if(!data[$('day').value]) $('day').value=Object.keys(data).sort()[0] || '2026-10-12';
+function updateClock(){
+  const now=new Date();
+  $('liveClock').textContent=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  $('liveDate').textContent=now.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+  render();
+}
+updateClock();setInterval(updateClock,1000);
+render();
+</script>
+</body>
+</html>
